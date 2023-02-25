@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/ilyadubrovsky/product-rest-api/pkg/logging"
 	"github.com/ilyakaznacheev/cleanenv"
+	"log"
 	"sync"
 )
 
@@ -12,22 +12,22 @@ var (
 )
 
 type Config struct {
-	Host     string `yaml:"host"`
-	Port     string `yaml:"port"`
-	Database string `yaml:"database"`
-	User     string `yaml:"username"`
+	Host     string `env:"MONGO_HOST" env-default:"localhost"`
+	Port     string `env:"MONGO_PORT" env-default:"27017"`
+	Database string `env:"MONGO_DATABASE" env-default:"restapi"`
+	Username string `env:"MONGO_USERNAME" env-default:""`
+	Password string `env:"MONGO_PASSWORD" env-default:""`
+	AuthDB   string `env:"MONGO_AUTHDB" env-default:""`
 }
 
 func GetConfig() (*Config, error) {
 	var err error = nil
 
 	once.Do(func() {
-		logger := logging.GetLogger()
-		logger.Info("read application config")
 		instance = &Config{}
-		if err = cleanenv.ReadConfig("configs/config.yml", instance); err != nil {
+		if err = cleanenv.ReadEnv(instance); err != nil {
 			help, _ := cleanenv.GetDescription(instance, nil)
-			logger.Debug(help)
+			log.Println(help)
 			return
 		}
 	})

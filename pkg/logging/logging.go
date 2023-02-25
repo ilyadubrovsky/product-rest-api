@@ -15,23 +15,19 @@ type Logger struct {
 	*logrus.Entry
 }
 
-// GetLogger returns the global logger entry
 func GetLogger() *Logger {
 	return &Logger{e}
 }
 
-// writeHook custom hook which implements logrus hook interface
 type writerHook struct {
 	Writer    []io.Writer
 	LogLevels []logrus.Level
 }
 
-// Levels returns log levels
 func (hook *writerHook) Levels() []logrus.Level {
 	return hook.LogLevels
 }
 
-// Fire write received log info to custom writers: file and ostream
 func (hook *writerHook) Fire(entry *logrus.Entry) error {
 	line, err := entry.String()
 	if err != nil {
@@ -45,7 +41,6 @@ func (hook *writerHook) Fire(entry *logrus.Entry) error {
 	return err
 }
 
-// init initializes logger from logrus
 func init() {
 	l := logrus.New()
 	l.SetReportCaller(true)
@@ -54,11 +49,11 @@ func init() {
 		FullTimestamp: true,
 		CallerPrettyfier: func(frame *runtime.Frame) (function string, file string) {
 			filename := path.Base(frame.File)
-			return fmt.Sprintf("%s()", frame.Func), filename
+			return fmt.Sprintf("%s()", frame.Function), filename
 		},
 	}
 
-	if err := os.Mkdir("logs", 0644); err != nil {
+	if err := os.MkdirAll("logs", 0644); err != nil {
 		panic(err)
 	}
 
@@ -73,4 +68,8 @@ func init() {
 		Writer:    []io.Writer{os.Stdout, file},
 		LogLevels: logrus.AllLevels,
 	})
+
+	l.SetLevel(logrus.TraceLevel)
+
+	e = logrus.NewEntry(l)
 }
