@@ -44,7 +44,9 @@ func (s *Service) GetProductByID(ctx context.Context, id string) (Product, error
 }
 
 func (s *Service) CreateProduct(ctx context.Context, dto CreateProductDTO) (string, error) {
-	id, err := s.repository.Create(ctx, dto)
+	createdProduct := NewProduct(dto)
+
+	id, err := s.repository.Create(ctx, createdProduct)
 	if err != nil {
 		s.logger.Warningf("failed to Create due to error: %v", err)
 		return "", err
@@ -53,8 +55,10 @@ func (s *Service) CreateProduct(ctx context.Context, dto CreateProductDTO) (stri
 	return id, nil
 }
 
-func (s *Service) FullyUpdateProductByID(ctx context.Context, id string, dto FullyUpdateProductDTO) error {
-	if err := s.repository.FullyUpdate(ctx, id, dto); err != nil {
+func (s *Service) FullyUpdateProductByID(ctx context.Context, id string, dto UpdateProductDTO) error {
+	updatedProduct := UpdateProduct(dto)
+
+	if err := s.repository.FullyUpdate(ctx, id, updatedProduct); err != nil {
 		s.logger.Warningf("failed to FullyUpdate due to error: %v", err)
 		return err
 	}
@@ -62,8 +66,10 @@ func (s *Service) FullyUpdateProductByID(ctx context.Context, id string, dto Ful
 	return nil
 }
 
-func (s *Service) PartiallyUpdateProductByID(ctx context.Context, id string, dto PartiallyUpdateProductDTO) error {
-	if err := s.repository.PartiallyUpdate(ctx, id, dto); err != nil {
+func (s *Service) PartiallyUpdateProductByID(ctx context.Context, id string, dto UpdateProductDTO) error {
+	updatedProduct := UpdateProduct(dto)
+
+	if err := s.repository.PartiallyUpdate(ctx, id, updatedProduct); err != nil {
 		s.logger.Warningf("failed to PartiallyUpdate due to error: %v", err)
 		return err
 	}

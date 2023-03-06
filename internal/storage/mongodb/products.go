@@ -21,13 +21,13 @@ func NewProductsMongo(database *mongo.Database, logger *logging.Logger) product.
 	return &productsMongo{collection: database.Collection(productsCollection), logger: logger}
 }
 
-func (s *productsMongo) Create(ctx context.Context, dto product.CreateProductDTO) (string, error) {
-	res, err := s.collection.InsertOne(ctx, dto)
+func (s *productsMongo) Create(ctx context.Context, prdct product.Product) (string, error) {
+	res, err := s.collection.InsertOne(ctx, prdct)
 	if err != nil {
 		s.logger.Tracef("Name: %s, Type: %s, Description: %s, InStock: %d, Material: %s, Color: %s",
-			dto.Name, dto.Type, dto.Description, dto.InStock,
-			dto.Characteristics.Material, dto.Characteristics.Color)
-		s.logger.Error("failed to InsertOne due to error: %v", err)
+			prdct.Name, prdct.Type, prdct.Description, prdct.InStock,
+			prdct.Characteristics.Material, prdct.Characteristics.Color)
+		s.logger.Errorf("failed to InsertOne due to error: %v", err)
 		return "", product.ErrInternalServer
 	}
 
@@ -36,8 +36,7 @@ func (s *productsMongo) Create(ctx context.Context, dto product.CreateProductDTO
 		return oid.Hex(), nil
 	}
 
-	s.logger.Trace(res.InsertedID)
-	s.logger.Error("failed to get a hex of objectid")
+	s.logger.Errorf("failed to get a hex of objectid: %v", oid)
 	return "", product.ErrBadRequest
 }
 
@@ -89,7 +88,7 @@ func (s *productsMongo) FindOne(ctx context.Context, id string) (product.Product
 	return prdct, nil
 }
 
-func (s *productsMongo) FullyUpdate(ctx context.Context, id string, dto product.FullyUpdateProductDTO) error {
+func (s *productsMongo) FullyUpdate(ctx context.Context, id string, prdct product.Product) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		s.logger.Tracef("id: %s", id)
@@ -97,11 +96,11 @@ func (s *productsMongo) FullyUpdate(ctx context.Context, id string, dto product.
 		return product.ErrBadRequest
 	}
 
-	productBytes, err := bson.Marshal(dto)
+	productBytes, err := bson.Marshal(prdct)
 	if err != nil {
 		s.logger.Tracef("oid: %s", oid)
 		s.logger.Debugf("Name: %s, Type: %s, InStock: %d, Description: %s, Characteristics: %s",
-			dto.Name, dto.Type, dto.InStock, dto.Description, dto.Characteristics)
+			prdct.Name, prdct.Type, prdct.InStock, prdct.Description, prdct.Characteristics)
 		s.logger.Errorf("failed to bson marshal a object due to error: %v", err)
 		return product.ErrInternalServer
 	}
@@ -124,7 +123,7 @@ func (s *productsMongo) FullyUpdate(ctx context.Context, id string, dto product.
 	return nil
 }
 
-func (s *productsMongo) PartiallyUpdate(ctx context.Context, id string, dto product.PartiallyUpdateProductDTO) error {
+func (s *productsMongo) PartiallyUpdate(ctx context.Context, id string, prdct product.Product) error {
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		s.logger.Tracef("id: %s", id)
@@ -132,7 +131,7 @@ func (s *productsMongo) PartiallyUpdate(ctx context.Context, id string, dto prod
 		return product.ErrBadRequest
 	}
 
-	prdctBytes, err := bson.Marshal(dto)
+	prdctBytes, err := bson.Marshal(prdct)
 	if err != nil {
 		s.logger.Tracef("oid: %s", oid)
 		s.logger.Errorf("failed to bson marshal a objet due to error: %v", err)

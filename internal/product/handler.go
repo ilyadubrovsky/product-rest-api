@@ -17,8 +17,8 @@ type service interface {
 	GetAllProducts(ctx context.Context) ([]Product, error)
 	GetProductByID(ctx context.Context, id string) (Product, error)
 	CreateProduct(ctx context.Context, dto CreateProductDTO) (string, error)
-	FullyUpdateProductByID(ctx context.Context, id string, dto FullyUpdateProductDTO) error
-	PartiallyUpdateProductByID(ctx context.Context, id string, dto PartiallyUpdateProductDTO) error
+	FullyUpdateProductByID(ctx context.Context, id string, dto UpdateProductDTO) error
+	PartiallyUpdateProductByID(ctx context.Context, id string, dto UpdateProductDTO) error
 	DeleteProductByID(ctx context.Context, id string) error
 }
 
@@ -89,13 +89,13 @@ func (h *Handler) getProduct(c *gin.Context) {
 }
 
 func (h *Handler) createProduct(c *gin.Context) {
-	prdct := CreateProductDTO{}
-	if err := c.BindJSON(&prdct); err != nil {
+	dto := CreateProductDTO{}
+	if err := c.BindJSON(&dto); err != nil {
 		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	id, err := h.service.CreateProduct(context.TODO(), prdct)
+	id, err := h.service.CreateProduct(context.TODO(), dto)
 	if err != nil {
 		switch err {
 		case ErrInternalServer:
@@ -115,13 +115,18 @@ func (h *Handler) createProduct(c *gin.Context) {
 func (h *Handler) fullyUpdateProduct(c *gin.Context) {
 	id := c.Params.ByName("id")
 
-	prdct := FullyUpdateProductDTO{}
-	if err := c.BindJSON(&prdct); err != nil {
+	dto := UpdateProductDTO{}
+	if err := c.BindJSON(&dto); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	if err := h.service.FullyUpdateProductByID(context.TODO(), id, prdct); err != nil {
+	if dto.Type == "" || dto.InStock == 0 || dto.Name == "" {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+
+	if err := h.service.FullyUpdateProductByID(context.TODO(), id, dto); err != nil {
 		switch err {
 		case ErrNotFound:
 			c.String(http.StatusNotFound, err.Error())
@@ -144,13 +149,13 @@ func (h *Handler) fullyUpdateProduct(c *gin.Context) {
 func (h *Handler) partiallyUpdateProduct(c *gin.Context) {
 	id := c.Params.ByName("id")
 
-	prdct := PartiallyUpdateProductDTO{}
-	if err := c.BindJSON(&prdct); err != nil {
+	dto := UpdateProductDTO{}
+	if err := c.BindJSON(&dto); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	if err := h.service.PartiallyUpdateProductByID(context.TODO(), id, prdct); err != nil {
+	if err := h.service.PartiallyUpdateProductByID(context.TODO(), id, dto); err != nil {
 		switch err {
 		case ErrNotFound:
 			c.String(http.StatusNotFound, err.Error())
